@@ -573,7 +573,7 @@ function showQrCode(url) {
 
 async function initPeerHost() {
   // Load dictionary
-  const dictPath = new URL('../csw19.txt', location.href).href;
+  const dictPath = new URL('csw19.txt', location.href).href;
   const res = await fetch(dictPath);
   if (!res.ok) throw new Error(`Failed to load dictionary (${res.status})`);
   dictionary = new Dictionary();
