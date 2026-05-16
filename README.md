@@ -1,3 +1,5 @@
+![LexiTrack](lexitrack-wide.png)
+
 # LexiTrack 🧩
 
 **LexiTrack** is an open-source, fast-paced word search game. Challenge your vocabulary by tracking paths through a grid of letters to find as many words as possible before the timer runs out.
