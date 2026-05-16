@@ -651,6 +651,11 @@ h2 {
   position: relative;
 }
 
+.scoring-player-me {
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 8px rgba(var(--accent-rgb, 138, 43, 226), 0.4);
+}
+
 .scoring-player-score {
   font-size: 2rem;
   font-weight: 900;

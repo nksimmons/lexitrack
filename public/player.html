@@ -103,15 +103,29 @@
 
     <!-- ROUND END -->
     <div id="screen-roundEnd" class="screen">
-      <div style="text-align:center;padding:1rem 0">
+      <div style="text-align:center;padding:0.75rem 0">
         <h2>Round <span id="round-end-num">1</span> Complete!</h2>
       </div>
+
+      <!-- Scoring Animation -->
+      <div id="player-scoring-animation">
+        <div id="player-scoring-players" class="scoring-players"></div>
+        <div id="player-scoring-phase-label" class="scoring-phase-label"></div>
+        <div id="player-scoring-words" class="scoring-words"></div>
+      </div>
+
+      <!-- Round Winner Banner -->
       <div id="round-winner-banner" style="display:none"></div>
-      <div id="round-end-words" class="card"></div>
-      <div id="round-end-scores" class="card" style="margin-top:1rem">
+
+      <!-- Your Words (shown after animation) -->
+      <div id="round-end-words" class="card" style="display:none;margin-top:1rem"></div>
+
+      <!-- Standings (shown after animation) -->
+      <div id="round-end-scores" class="card" style="display:none;margin-top:1rem">
         <h2 style="margin-bottom:0.5rem">Standings</h2>
         <div id="player-standings"></div>
       </div>
+
       <div id="roundend-host-controls" style="text-align:center;margin-top:1rem;display:none">
         <button class="btn btn-primary" id="btn-next-round" style="width:100%">Next Round →</button>
       </div>
@@ -123,7 +137,15 @@
       <div style="text-align:center">
         <h1>🏆 Game Over!</h1>
       </div>
-      <div id="final-standings" class="card" style="margin-top:1rem">
+
+      <!-- Final round scoring animation -->
+      <div id="gameover-scoring-animation">
+        <div id="go-scoring-players" class="scoring-players"></div>
+        <div id="go-scoring-phase-label" class="scoring-phase-label"></div>
+        <div id="go-scoring-words" class="scoring-words"></div>
+      </div>
+
+      <div id="final-standings" class="card" style="display:none;margin-top:1rem">
         <h2 style="margin-bottom:0.5rem">Final Scores</h2>
         <div id="final-player-list"></div>
       </div>

@@ -441,21 +441,60 @@ function renderRoundEnd() {
   document.getElementById('round-end-num').textContent = state.round;
   updateHostControls();
 
+  // Hide post-animation cards
+  document.getElementById('round-end-words').style.display = 'none';
+  document.getElementById('round-end-scores').style.display = 'none';
+  document.getElementById('round-winner-banner').style.display = 'none';
+
+  // Build player score cards showing pre-round scores
+  const playersEl = document.getElementById('player-scoring-players');
+  playersEl.innerHTML = state.players.map(p => {
+    const roundScore = state.playerRoundScores ? (state.playerRoundScores[p.id] || 0) : 0;
+    const preRoundScore = p.totalScore - roundScore;
+    const isMe = p.id === playerId;
+    return `
+      <div class="scoring-player-card${isMe ? ' scoring-player-me' : ''}" id="re-scoring-card-${p.id}">
+        <div class="avatar" style="background:${p.avatar.bgColor || '#4a3a6e'};width:44px;height:44px;font-size:1.1rem;margin:0 auto 0.4rem">${renderAvatarContent(p.avatar, p.roundWins)}</div>
+        <div class="player-name" style="font-size:0.8rem">${esc(p.name)}</div>
+        <div class="scoring-player-score" id="re-score-display-${p.id}">${preRoundScore}</div>
+        <div class="score-float-container" id="re-float-${p.id}"></div>
+      </div>`;
+  }).join('');
+
+  const runAnimation = () => {
+    animatePlayerScoring(state.scoringPhases, 're', () => {
+      state.players.forEach(p => {
+        const el = document.getElementById(`re-score-display-${p.id}`);
+        if (el) el.textContent = p.totalScore;
+      });
+      showRoundEndResults();
+    });
+  };
+
+  if (state.scoringPhases) {
+    runAnimation();
+  } else {
+    state.players.forEach(p => {
+      const el = document.getElementById(`re-score-display-${p.id}`);
+      if (el) el.textContent = p.totalScore;
+    });
+    showRoundEndResults();
+  }
+}
+
+function showRoundEndResults() {
   // Round winner banner
   const winnerBanner = document.getElementById('round-winner-banner');
-  if (winnerBanner) {
-    if (state.lastRoundWinnerId) {
-      const winner = state.players.find(p => p.id === state.lastRoundWinnerId);
-      if (winner) {
-        const isMe = winner.id === playerId;
-        winnerBanner.innerHTML = `<div class="round-winner-card${isMe ? ' is-me' : ''}">👑 ${isMe ? 'You won this round!' : `${esc(winner.name)} wins this round!`}</div>`;
-        winnerBanner.style.display = '';
-      }
-    } else {
-      winnerBanner.style.display = 'none';
+  if (state.lastRoundWinnerId) {
+    const winner = state.players.find(p => p.id === state.lastRoundWinnerId);
+    if (winner) {
+      const isMe = winner.id === playerId;
+      winnerBanner.innerHTML = `<div class="round-winner-card${isMe ? ' is-me' : ''}">👑 ${isMe ? 'You won this round!' : `${esc(winner.name)} wins this round!`}</div>`;
+      winnerBanner.style.display = '';
     }
   }
 
+  // Your words
   const container = document.getElementById('round-end-words');
   const words = state.myWords || [];
   container.innerHTML = `
@@ -465,15 +504,136 @@ function renderRoundEnd() {
       if (w.reason === 'unique') cls = 'valid';
       else if (w.reason === 'common') cls = 'common';
       return `<li class="word-tag ${cls}">${esc(w.word)}${w.finalScore ? `<span class="score">+${w.finalScore}</span>` : ''}</li>`;
-    }).join('')}</ul>
-  `;
+    }).join('')}</ul>`;
+  container.style.display = '';
 
+  // Standings
   renderStandings(document.getElementById('player-standings'));
+  document.getElementById('round-end-scores').style.display = '';
 }
 
 function renderGameOver() {
-  renderStandings(document.getElementById('final-player-list'));
   updateHostControls();
+
+  // Build player score cards showing pre-final-round scores
+  const playersEl = document.getElementById('go-scoring-players');
+  playersEl.innerHTML = state.players.map(p => {
+    const roundScore = state.playerRoundScores ? (state.playerRoundScores[p.id] || 0) : 0;
+    const preRoundScore = p.totalScore - roundScore;
+    const isMe = p.id === playerId;
+    return `
+      <div class="scoring-player-card${isMe ? ' scoring-player-me' : ''}" id="go-scoring-card-${p.id}">
+        <div class="avatar" style="background:${p.avatar.bgColor || '#4a3a6e'};width:44px;height:44px;font-size:1.1rem;margin:0 auto 0.4rem">${renderAvatarContent(p.avatar, p.roundWins)}</div>
+        <div class="player-name" style="font-size:0.8rem">${esc(p.name)}</div>
+        <div class="scoring-player-score" id="go-score-display-${p.id}">${preRoundScore}</div>
+        <div class="score-float-container" id="go-float-${p.id}"></div>
+      </div>`;
+  }).join('');
+
+  const revealFinalStandings = () => {
+    state.players.forEach(p => {
+      const el = document.getElementById(`go-score-display-${p.id}`);
+      if (el) el.textContent = p.totalScore;
+    });
+    renderStandings(document.getElementById('final-player-list'));
+    document.getElementById('final-standings').style.display = '';
+    // Show host controls after animation
+    updateHostControls();
+  };
+
+  if (state.scoringPhases) {
+    // Hide host controls until animation finishes
+    const goControls = document.getElementById('gameover-host-controls');
+    if (goControls) goControls.style.display = 'none';
+    const goWait = document.getElementById('gameover-waiting-msg');
+    if (goWait) goWait.style.display = 'none';
+
+    animatePlayerScoring(state.scoringPhases, 'go', revealFinalStandings);
+  } else {
+    revealFinalStandings();
+  }
+}
+
+function animatePlayerScoring(phases, idPrefix, onComplete) {
+  const UNIQUE_BONUS = 2;
+  const commonPhase = phases ? phases.find(p => p.phase === 'common') : null;
+  const uniquePhase = phases ? phases.find(p => p.phase === 'unique') : null;
+
+  const runningScores = {};
+  state.players.forEach(p => {
+    const roundScore = state.playerRoundScores ? (state.playerRoundScores[p.id] || 0) : 0;
+    runningScores[p.id] = p.totalScore - roundScore;
+  });
+
+  const phaseLabel = document.getElementById(`${idPrefix}-scoring-phase-label`);
+  const wordsEl = document.getElementById(`${idPrefix}-scoring-words`);
+  if (!phaseLabel || !wordsEl) { onComplete(); return; }
+
+  // Phase 1: Common words
+  phaseLabel.textContent = '🤝 Common Words';
+  phaseLabel.className = 'scoring-phase-label fade-in';
+  wordsEl.innerHTML = '';
+  let delay = 400;
+
+  if (commonPhase && commonPhase.items.length > 0) {
+    commonPhase.items.forEach((item, i) => {
+      setTimeout(() => {
+        const tag = document.createElement('span');
+        tag.className = 'word-tag common pop-in';
+        tag.innerHTML = `${esc(item.word.toUpperCase())} <span class="score">+${item.score}</span>`;
+        wordsEl.appendChild(tag);
+        item.playerIds.forEach(pid => {
+          runningScores[pid] = (runningScores[pid] || 0) + item.score;
+          playerFloatScore(pid, `+${item.score}`, runningScores[pid], idPrefix);
+        });
+      }, delay + i * 350);
+    });
+    delay += commonPhase.items.length * 350 + 1000;
+  } else {
+    setTimeout(() => {
+      wordsEl.innerHTML = '<div style="color:var(--text-dim);text-align:center;padding:0.75rem">No common words!</div>';
+    }, delay);
+    delay += 1200;
+  }
+
+  // Phase 2: Unique words
+  setTimeout(() => {
+    phaseLabel.textContent = `⭐ Unique Words (+${UNIQUE_BONUS} bonus each)`;
+    phaseLabel.className = 'scoring-phase-label fade-in';
+    wordsEl.innerHTML = '';
+
+    if (uniquePhase && uniquePhase.items.length > 0) {
+      uniquePhase.items.forEach((item, i) => {
+        setTimeout(() => {
+          const tag = document.createElement('span');
+          tag.className = 'word-tag valid pop-in';
+          const bonusText = item.lengthBonus > 0 ? ` (${item.baseScore}+${item.lengthBonus}+${item.uniqueBonus})` : '';
+          tag.innerHTML = `${esc(item.word.toUpperCase())} <span class="score">+${item.totalScore}${bonusText}</span>`;
+          wordsEl.appendChild(tag);
+          runningScores[item.playerId] = (runningScores[item.playerId] || 0) + item.totalScore;
+          playerFloatScore(item.playerId, `+${item.totalScore}`, runningScores[item.playerId], idPrefix);
+        }, i * 300);
+      });
+      setTimeout(onComplete, uniquePhase.items.length * 300 + 1200);
+    } else {
+      wordsEl.innerHTML = '<div style="color:var(--text-dim);text-align:center;padding:0.75rem">No unique words!</div>';
+      setTimeout(onComplete, 1200);
+    }
+  }, delay);
+}
+
+function playerFloatScore(pid, text, newTotal, idPrefix) {
+  const container = document.getElementById(`${idPrefix}-float-${pid}`);
+  const scoreEl = document.getElementById(`${idPrefix}-score-display-${pid}`);
+  if (!container) return;
+  const float = document.createElement('div');
+  float.className = 'score-float';
+  float.textContent = text;
+  container.appendChild(float);
+  setTimeout(() => float.remove(), 1200);
+  if (scoreEl) {
+    setTimeout(() => { scoreEl.textContent = newTotal; }, 400);
+  }
 }
 
 function renderStandings(container) {

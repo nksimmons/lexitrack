@@ -71,6 +71,7 @@ function createFreshState() {
     validWordsOnBoard: new Set(),
     hostPlayerId: null,
     scoringPhases: null,
+    playerRoundScores: null,
   };
 }
 
@@ -337,6 +338,9 @@ function getPlayerState(playerId) {
     hostPlayerId: gameState.hostPlayerId,
     playerWordCounts,
     lastRoundWinnerId: gameState.lastRoundWinnerId || null,
+    scoringPhases: (gameState.phase === 'roundEnd' || gameState.phase === 'gameOver') ? gameState.scoringPhases : null,
+    playerRoundScores: (gameState.phase === 'roundEnd' || gameState.phase === 'gameOver') ? gameState.playerRoundScores : null,
+    allBoardWords: (gameState.phase === 'roundEnd' || gameState.phase === 'gameOver') ? [...gameState.validWordsOnBoard].sort() : null,
   };
 }
 
@@ -443,6 +447,7 @@ function endRound() {
     { phase: 'common', items: scored.commonItems },
     { phase: 'unique', items: scored.uniqueItems },
   ];
+  gameState.playerRoundScores = scored.playerRoundScores;
 
   let bestScore = 0;
   let winnerId = null;
