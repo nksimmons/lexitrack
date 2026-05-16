@@ -1,4 +1,4 @@
-![LexiTrack](lexitrack-wide.png)
+![LexiTrack](lexitrack-minimal.png)
 
 # LexiTrack 🧩
 
