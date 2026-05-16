@@ -1,0 +1,16 @@
+{
+  "name": "lexitrack",
+  "version": "1.0.0",
+  "description": "Open-source multiplayer word-grid game",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "bench:search": "node scripts/benchmark-board-search.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "qrcode": "^1.5.3",
+    "ws": "^8.18.0"
+  }
+}

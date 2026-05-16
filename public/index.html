@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LexiTrack</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .landing { max-width: 480px; margin: 0 auto; padding: 2rem 1rem; text-align: center; }
+    .landing h1 { margin-bottom: 0.5rem; }
+    .landing .tagline { color: var(--text-dim); margin-bottom: 2.5rem; font-size: 1.1rem; }
+    .mode-card {
+      display: block;
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      text-decoration: none;
+      color: var(--text);
+      border: 2px solid transparent;
+      transition: border-color 0.2s, transform 0.15s;
+      text-align: left;
+    }
+    .mode-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .mode-card .mode-icon { font-size: 2.5rem; margin-bottom: 0.5rem; display: block; }
+    .mode-card .mode-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .mode-card .mode-desc { font-size: 0.9rem; color: var(--text-dim); line-height: 1.4; }
+    .mode-card.primary { border-color: var(--accent2); }
+    .divider { border: none; border-top: 1px solid var(--tile-border); margin: 1.5rem 0; }
+    .footer-note { font-size: 0.8rem; color: var(--text-dim); margin-top: 1.5rem; }
+  </style>
+</head>
+<body>
+  <div class="landing">
+    <h1>🧩 LexiTrack</h1>
+    <p class="tagline">A local-network word game for 2–8 players</p>
+
+    <a href="/host" class="mode-card">
+      <span class="mode-icon">📺</span>
+      <div class="mode-title">Dedicated Host Screen</div>
+      <div class="mode-desc">
+        Open this on a laptop or TV. Shows the board, timer, and all players' word counts.
+        Players join separately by scanning the QR code.
+      </div>
+    </a>
+
+    <a href="/combined" class="mode-card primary">
+      <span class="mode-icon">📱</span>
+      <div class="mode-title">Host + Play (Phone)</div>
+      <div class="mode-desc">
+        No dedicated screen? Open this on the phone running the server.
+        You'll play and host at the same time, and a QR code lets others join.
+      </div>
+    </a>
+
+    <hr class="divider">
+
+    <a href="/player" class="mode-card">
+      <span class="mode-icon">🎮</span>
+      <div class="mode-title">Join as Player</div>
+      <div class="mode-desc">
+        Already have a host screen set up? Open this (or scan the QR code) to join as a player.
+      </div>
+    </a>
+
+    <p class="footer-note">Run <code>npm start</code> in the lexitrack folder, then share the host URL with your TV or phone.</p>
+  </div>
+</body>
+</html>

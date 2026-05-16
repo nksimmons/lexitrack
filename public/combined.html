@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>LexiTrack – Host &amp; Play</title>
+  <style>
+    /* ── Design tokens: light theme ── */
+    :root {
+      --bg: #f6f4ee;
+      --bg-card: #fffdf8;
+      --bg-surface: #ede9e0;
+      --accent: #c1121f;
+      --accent2: #b45309;
+      --accent3: #0e7490;
+      --text: #0b1220;
+      --text-dim: #64748b;
+      --success: #059669;
+      --danger: #dc2626;
+      --tile-bg: #e8e0d0;
+      --tile-border: #c5bba8;
+      --tile-selected: #c1121f;
+      --radius: 12px;
+    }
+
+    /* ── Reset ── */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      overscroll-behavior: none;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    h2 { font-size: 1.5rem; color: var(--text); font-weight: 700; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      border: 1px solid #cbd5e1;
+      box-shadow: 0 2px 8px rgba(15,23,42,0.06);
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+      padding: 0.75rem 2rem; border: none; border-radius: var(--radius);
+      font-size: 1.1rem; font-weight: 700; cursor: pointer;
+      transition: transform 0.1s, opacity 0.2s;
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .btn:active { transform: scale(0.95); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary { background: linear-gradient(135deg, var(--accent), #a00d19); color: white; }
+    .btn-secondary { background: var(--bg-surface); color: var(--text); border: 2px solid var(--tile-border); }
+    .btn-success { background: linear-gradient(135deg, var(--accent3), #0a5a6e); color: white; }
+
+    /* ── Timer ── */
+    .timer { font-size: 4rem; font-weight: 900; font-variant-numeric: tabular-nums; text-align: center; color: var(--text); }
+    .timer.warning { color: var(--accent2); }
+    .timer.danger { color: var(--danger); animation: pulse 0.5s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+    /* ── Board ── */
+    .board {
+      display: grid; gap: 8px;
+      max-width: 500px; width: 100%; margin: 0 auto;
+      user-select: none; -webkit-user-select: none; touch-action: none;
+    }
+    .tile {
+      aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; font-weight: 900;
+      background: var(--tile-bg); border: 3px solid var(--tile-border);
+      border-radius: var(--radius); cursor: pointer; transition: all 0.15s;
+      text-transform: uppercase;
+    }
+    .tile.small { font-size: 1.3rem; border-width: 2px; border-radius: 8px; }
+    /* ── Game config ── */
+    .config-panel { background: var(--bg-surface); border-radius: var(--radius); padding: 1rem; margin: 1rem 0; }
+    .config-panel h3 { margin: 0 0 0.75rem; font-size: 1rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+    .config-row { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; }
+    .config-row label { font-weight: 600; }
+    .config-row select { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 0.3rem 0.6rem; font-size: 0.95rem; }
+    .tile.selected { background: var(--tile-selected); border-color: white; color: white; transform: scale(1.05); box-shadow: 0 0 20px rgba(193,18,31,0.4); }
+    .tile.adjacent { border-color: var(--accent2); }
+
+    /* ── Avatar ── */
+    .avatar {
+      width: 60px; height: 60px; border-radius: 50%; margin: 0 auto 0.5rem;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem; border: 3px solid var(--tile-border);
+      position: relative; overflow: hidden;
+    }
+    .avatar-large { width: 100px; height: 100px; font-size: 3rem; }
+    .avatar-crown { position: absolute; top: -2px; left: 50%; transform: translateX(-50%); font-size: 0.9rem; line-height: 1; z-index: 1; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3)); }
+    .avatar img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .avatar-preview { width: 120px; height: 120px; font-size: 3.5rem; margin: 1rem auto; }
+
+    .avatar-options { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin: 0.75rem 0; }
+    .avatar-option {
+      width: 48px; height: 48px; border-radius: 50%; border: 3px solid transparent;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; transition: all 0.15s;
+    }
+    .avatar-option:hover { transform: scale(1.1); }
+    .avatar-option.selected { border-color: var(--accent); box-shadow: 0 0 10px rgba(193,18,31,0.4); }
+    .color-option { width: 36px; height: 36px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; transition: all 0.15s; }
+    .color-option:hover { transform: scale(1.15); }
+    .color-option.selected { border-color: #0b1220; box-shadow: 0 0 10px rgba(0,0,0,0.3); }
+
+    /* ── Word tags ── */
+    .word-list { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .word-tag { padding: 0.3rem 0.75rem; border-radius: 999px; font-size: 0.9rem; font-weight: 600; }
+    .word-tag.valid { background: rgba(5,150,105,0.1); color: var(--success); border: 1px solid var(--success); }
+    .word-tag.invalid { background: rgba(220,38,38,0.1); color: var(--danger); border: 1px solid var(--danger); text-decoration: line-through; }
+    .word-tag.shared { background: rgba(100,116,139,0.15); color: var(--text-dim); border: 1px solid var(--text-dim); text-decoration: line-through; }
+    .word-tag.common { background: rgba(14,116,144,0.1); color: var(--accent3); border: 1px solid var(--accent3); }
+    .word-tag .score { margin-left: 0.3rem; font-size: 0.75rem; opacity: 0.8; }
+
+    /* ── Player cards / scoreboard ── */
+    .lobby-players { display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: center; padding: 2rem 0; }
+    .player-card { background: var(--bg-surface); border-radius: var(--radius); padding: 1rem; min-width: 140px; text-align: center; transition: transform 0.2s; }
+    .player-card.leader { border: 2px solid var(--accent2); box-shadow: 0 0 20px rgba(180,83,9,0.2); }
+    .player-name { font-weight: 700; font-size: 1.1rem; margin-bottom: 0.25rem; }
+    .player-score { font-size: 2rem; font-weight: 900; color: var(--accent2); }
+    .player-words-count { font-size: 0.85rem; color: var(--text-dim); }
+    .player-words-count.word-count-bump { animation: wordCountBump 0.4s ease-out; color: var(--success); }
+    @keyframes wordCountBump { 0% { transform: scale(1); } 40% { transform: scale(1.6); } 100% { transform: scale(1); } }
+
+    /* ── Results / scoring ── */
+    .results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; margin-top: 1rem; }
+    .result-card { background: var(--bg-surface); border-radius: var(--radius); padding: 1rem; }
+    .result-card .name { font-weight: 700; font-size: 1.1rem; margin-bottom: 0.5rem; }
+    .result-card .round-score { font-size: 1.5rem; font-weight: 900; color: var(--accent2); }
+    .scoring-players { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; margin-bottom: 1.5rem; }
+    .scoring-player-card { background: var(--bg-surface); border-radius: var(--radius); padding: 1rem; min-width: 120px; text-align: center; position: relative; }
+    .scoring-player-score { font-size: 2rem; font-weight: 900; color: var(--accent2); font-variant-numeric: tabular-nums; }
+    .score-float-container { position: absolute; top: 0; left: 50%; transform: translateX(-50%); pointer-events: none; }
+    .score-float { position: absolute; left: 50%; transform: translateX(-50%); font-size: 1.3rem; font-weight: 900; color: var(--success); animation: floatUp 1.2s ease-out forwards; white-space: nowrap; }
+    @keyframes floatUp { 0% { opacity: 1; transform: translateX(-50%) translateY(0); } 70% { opacity: 1; } 100% { opacity: 0; transform: translateX(-50%) translateY(-60px); } }
+    .scoring-phase-label { text-align: center; font-size: 1.5rem; font-weight: 700; padding: 1rem 0 0.75rem; color: var(--accent2); }
+    .scoring-words { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; min-height: 3rem; padding: 0 1rem; }
+
+    /* ── Word input / misc ── */
+    .current-word { text-align: center; font-size: 2rem; font-weight: 900; min-height: 3rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent2); }
+    .word-count-bar { text-align: center; font-size: 1rem; color: var(--text-dim); padding: 0.5rem 0; font-weight: 600; }
+    .word-count-bar span { font-size: 1.4rem; font-weight: 900; color: var(--accent3); }
+    .join-screen { max-width: 400px; margin: 2rem auto; text-align: center; }
+    .join-screen input[type="text"] {
+      width: 100%; padding: 1rem; border: 2px solid var(--tile-border); border-radius: var(--radius);
+      background: var(--bg-surface); color: var(--text); font-size: 1.3rem; font-weight: 700;
+      text-align: center; outline: none; margin-bottom: 1rem;
+    }
+    .join-screen input[type="text"]:focus { border-color: var(--accent); }
+    .qr-code-img { display: block; width: 200px; height: 200px; margin: 0.5rem auto; border-radius: 8px; background: white; padding: 6px; }
+    .join-url { font-size: 1rem; font-weight: 700; color: var(--accent3); word-break: break-all; }
+
+    /* ── Toasts ── */
+    .toast-container { position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; flex-direction: column; gap: 0.5rem; align-items: center; }
+    .toast { padding: 0.5rem 1.5rem; border-radius: 999px; font-weight: 700; font-size: 0.95rem; animation: toastIn 0.3s ease-out; }
+    .toast.success { background: var(--success); color: #fff; }
+    .toast.error { background: var(--danger); color: #fff; }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ── Screens ── */
+    .screen { display: none; }
+    .screen.active { display: block; }
+    .waiting-msg { text-align: center; font-size: 1.3rem; color: var(--text-dim); padding: 3rem 1rem; }
+
+    /* ── Animations ── */
+    .fade-in { animation: fadeIn 0.4s ease-out; }
+    .pop-in { animation: popIn 0.3s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes popIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      h1 { font-size: 1.8rem; }
+      .timer { font-size: 3rem; }
+      .tile { font-size: 1.5rem; }
+      .board { gap: 6px; max-width: none; }
+    }
+
+    /* ── Combined-mode layout ── */
+    .player-layout { max-width: 600px; margin: 0 auto; padding: 0.25rem; }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; }
+    .top-bar .timer { font-size: 2rem; }
+    .my-score { font-size: 1.5rem; font-weight: 900; color: var(--accent2); }
+    .submit-bar { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+    .my-words { margin-top: 0.75rem; }
+    .avatar-builder { max-width: 400px; margin: 0 auto; }
+    .section-label { font-size: 0.85rem; color: var(--text-dim); margin: 0.75rem 0 0.25rem; text-transform: uppercase; letter-spacing: 0.1em; }
+
+    .draw-area-wrapper { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+    #draw-canvas {
+      border: 3px solid var(--tile-border);
+      border-radius: 12px;
+      background: #f0ece4;
+      touch-action: none;
+      cursor: crosshair;
+      width: 200px;
+      height: 200px;
+    }
+    .draw-tools { display: flex; justify-content: space-between; align-items: center; width: 200px; }
+    .draw-colors { display: flex; gap: 4px; flex-wrap: wrap; }
+    .draw-color { width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; }
+    .draw-color.selected { border-color: #0b1220; box-shadow: 0 0 6px rgba(0,0,0,0.35); }
+    .draw-actions { display: flex; gap: 0.25rem; }
+    .btn-tool {
+      background: var(--bg-surface); border: 1px solid var(--tile-border); color: var(--text);
+      border-radius: 6px; padding: 0.25rem 0.5rem; font-size: 1rem; cursor: pointer;
+    }
+    .btn-tool:active { background: var(--tile-border); }
+
+    .combined-qr { text-align: center; margin: 1rem 0; }
+    .combined-qr img { width: 160px; height: 160px; border-radius: 8px; background: white; padding: 4px; }
+    .combined-qr .qr-label { color: var(--text-dim); font-size: 0.85rem; margin-top: 0.4rem; }
+    .combined-qr .qr-url { font-size: 0.75rem; color: var(--accent3); word-break: break-all; margin-top: 0.2rem; }
+
+    .mini-scoreboard { display: flex; gap: 0.5rem; overflow-x: auto; padding: 0.25rem 0 0.5rem; margin-bottom: 0.5rem; }
+    .mini-player { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; min-width: 56px; padding: 0.4rem; border-radius: 8px; background: var(--bg-card); font-size: 0.75rem; flex-shrink: 0; }
+    .mini-player.me { border: 2px solid var(--accent); }
+    .mini-player .mini-name { font-weight: 700; max-width: 52px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mini-player .mini-words { color: var(--accent3); font-weight: 900; font-size: 1rem; }
+    .mini-player .mini-score { color: var(--text-dim); }
+  </style>
+</head>
+<body>
+  <div class="player-layout">
+
+    <!-- JOIN / AVATAR SCREEN -->
+    <div id="screen-join" class="screen active">
+      <div class="join-screen">
+        <h1 style="margin-bottom:1.5rem">🧩 LexiTrack</h1>
+        <p style="color:var(--text-dim);margin-bottom:1rem;text-align:center">You'll host &amp; play on this device</p>
+        <input type="text" id="player-name" placeholder="Your Name" maxlength="20" autocomplete="off" />
+
+        <div class="avatar-builder card">
+          <div id="avatar-preview" class="avatar avatar-preview"></div>
+
+          <div class="section-label">Draw Your Avatar</div>
+          <div class="draw-area-wrapper">
+            <canvas id="draw-canvas" width="200" height="200"></canvas>
+            <div class="draw-tools">
+              <div class="draw-colors" id="draw-colors"></div>
+              <div class="draw-actions">
+                <button class="btn-tool" id="btn-undo">↩</button>
+                <button class="btn-tool" id="btn-clear">✕</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-label">Background Color</div>
+          <div class="avatar-options" id="color-options"></div>
+        </div>
+
+        <button class="btn btn-primary" id="btn-join" style="width:100%; margin-top:1rem">Start Hosting</button>
+      </div>
+    </div>
+
+    <!-- WAITING IN LOBBY -->
+    <div id="screen-lobby" class="screen">
+      <div class="waiting-msg">
+        <h2>You're in! 🎲</h2>
+
+        <!-- QR code so others can join -->
+        <div class="combined-qr">
+          <p class="qr-label">Share this with other players:</p>
+          <img id="combined-qr-img" class="qr-code-img" alt="QR code — waiting for peer ID...">
+          <p class="qr-url" id="combined-join-url"></p>
+        </div>
+
+        <div id="lobby-player-list" style="margin-top:1rem"></div>
+
+        <div id="game-config" class="config-panel" style="display:none">
+          <h3>Game Settings</h3>
+          <div class="config-row">
+            <label for="cfg-grid-size">Grid Size</label>
+            <select id="cfg-grid-size">
+              <option value="4" selected>4×4 (Classic)</option>
+              <option value="5">5×5 (Big)</option>
+              <option value="6">6×6 (Giant)</option>
+              <option value="7">7×7 (Mega)</option>
+            </select>
+          </div>
+          <div class="config-row">
+            <label for="cfg-rounds">Rounds</label>
+            <select id="cfg-rounds">
+              <option value="3">3</option>
+              <option value="5" selected>5</option>
+              <option value="7">7</option>
+              <option value="10">10</option>
+            </select>
+          </div>
+          <div class="config-row">
+            <label for="cfg-duration">Round Duration</label>
+            <select id="cfg-duration">
+              <option value="60">1 minute</option>
+              <option value="90" selected>90 seconds</option>
+              <option value="120">2 minutes</option>
+              <option value="180">3 minutes</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" id="btn-start-game" style="display:none;width:100%;margin-top:1.5rem">▶ Start Game</button>
+        <p id="lobby-waiting-msg" style="margin-top:1rem;color:var(--text-dim);text-align:center">
+          Waiting for the host to start the game…
+        </p>
+      </div>
+    </div>
+
+    <!-- PLAYING -->
+    <div id="screen-playing" class="screen">
+      <div class="top-bar">
+        <div>
+          <span style="color:var(--text-dim);font-size:0.85rem">Round <span id="round-num">1</span>/<span id="max-rounds">5</span></span>
+          <div class="my-score">Score: <span id="my-total-score">0</span></div>
+        </div>
+        <div class="timer" id="timer">90</div>
+      </div>
+
+      <!-- Mini scoreboard (all players' word counts) -->
+      <div class="mini-scoreboard" id="mini-scoreboard"></div>
+
+      <div class="current-word" id="current-word">&nbsp;</div>
+      <div class="board" id="board"></div>
+
+      <div class="word-count-bar">
+        <span id="my-word-count">0</span> words found
+      </div>
+
+      <div class="my-words" id="my-words"></div>
+    </div>
+
+    <!-- ROUND END -->
+    <div id="screen-roundEnd" class="screen">
+      <div style="text-align:center;padding:1rem 0">
+        <h2>Round <span id="round-end-num">1</span> Complete!</h2>
+      </div>
+      <div id="round-end-words" class="card"></div>
+      <div id="round-end-scores" class="card" style="margin-top:1rem">
+        <h2 style="margin-bottom:0.5rem">Standings</h2>
+        <div id="player-standings"></div>
+      </div>
+      <div id="roundend-host-controls" style="text-align:center;margin-top:1rem;display:none">
+        <button class="btn btn-primary" id="btn-next-round" style="width:100%">Next Round →</button>
+      </div>
+      <div id="roundend-waiting-msg" class="waiting-msg">Waiting for host to start next round...</div>
+    </div>
+
+    <!-- GAME OVER -->
+    <div id="screen-gameOver" class="screen">
+      <div style="text-align:center">
+        <h1>🏆 Game Over!</h1>
+      </div>
+      <div id="final-standings" class="card" style="margin-top:1rem">
+        <h2 style="margin-bottom:0.5rem">Final Scores</h2>
+        <div id="final-player-list"></div>
+      </div>
+      <div id="gameover-host-controls" style="text-align:center;margin-top:1rem;display:none">
+        <button class="btn btn-success" id="btn-play-again" style="width:100%">Play Again</button>
+      </div>
+      <div id="gameover-waiting-msg" class="waiting-msg">Waiting for host to start new game...</div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toasts"></div>
+
+  <script src="js/trystero-peer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+  <script src="js/combined.js"></script>
+</body>
+</html>

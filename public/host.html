@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LexiTrack - Host</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="container">
+    <header style="text-align:center; padding: 1rem 0;">
+      <h1>🧩 LexiTrack</h1>
+    </header>
+
+    <!-- LOBBY -->
+    <div id="screen-lobby" class="screen active">
+      <div class="card" style="text-align:center">
+        <h2>Waiting for players...</h2>
+        <div class="qr-area">
+          <p style="margin:0.75rem 0 0.5rem; color: var(--text-dim)">Scan to join:</p>
+          <img id="qr-img" class="qr-code-img" alt="QR code — waiting for peer ID...">
+          <p class="join-url" id="join-url" style="margin-top:0.5rem"></p>
+        </div>
+      </div>
+      <div class="lobby-players" id="lobby-players"></div>
+    </div>
+
+    <!-- PLAYING -->
+    <div id="screen-playing" class="screen">
+      <div class="host-layout">
+        <div class="host-center">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem">
+            <h2>Round <span id="round-num">1</span> / <span id="max-rounds">5</span></h2>
+            <div class="timer" id="timer">90</div>
+          </div>
+          <div class="board host-board" id="board"></div>
+        </div>
+        <div class="host-sidebar">
+          <div class="card">
+            <h2 style="margin-bottom:1rem">Scores</h2>
+            <div class="scoreboard" id="scoreboard"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROUND END -->
+    <div id="screen-roundEnd" class="screen">
+      <div style="text-align:center">
+        <h2>Round <span id="round-end-num">1</span> Results</h2>
+      </div>
+      <div class="host-layout">
+        <div class="host-center">
+          <div class="results-grid" id="round-results"></div>
+        </div>
+        <div class="host-sidebar">
+          <div class="card">
+            <h2 style="margin-bottom:1rem">Standings</h2>
+            <div class="scoreboard" id="standings"></div>
+          </div>
+          <div style="text-align:center;margin-top:1rem">
+            <button class="btn btn-primary" id="btn-host-next" style="width:100%">Next Round →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GAME OVER -->
+    <div id="screen-gameOver" class="screen">
+      <div style="text-align:center">
+        <h1>🏆 Game Over!</h1>
+      </div>
+      <div class="host-layout">
+        <div class="host-center">
+          <div class="podium" id="podium"></div>
+          <div class="results-grid" id="final-round-results" style="margin-top:1rem"></div>
+        </div>
+        <div class="host-sidebar">
+          <div class="card">
+            <h2 style="margin-bottom:1rem">Final Scores</h2>
+            <div class="scoreboard" id="final-scores"></div>
+          </div>
+          <div style="text-align:center;margin-top:1rem">
+            <button class="btn btn-success" id="btn-host-restart" style="width:100%">Play Again</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/trystero-peer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+  <script src="js/host.js"></script>
+</body>
+</html>

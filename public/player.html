@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>LexiTrack</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* Extra mobile player styles */
+    body { overscroll-behavior: none; }
+    .player-layout { max-width: 600px; margin: 0 auto; padding: 0.25rem; }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; }
+    .top-bar .timer { font-size: 2rem; }
+    .my-score { font-size: 1.5rem; font-weight: 900; color: var(--accent2); }
+    .submit-bar { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+    .my-words { margin-top: 0.75rem; }
+    .avatar-builder { max-width: 400px; margin: 0 auto; }
+    .section-label { font-size: 0.85rem; color: var(--text-dim); margin: 0.75rem 0 0.25rem; text-transform: uppercase; letter-spacing: 0.1em; }
+
+    .draw-area-wrapper { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+    #draw-canvas {
+      border: 3px solid var(--tile-border);
+      border-radius: 12px;
+      background: #1a1a2e;
+      touch-action: none;
+      cursor: crosshair;
+      width: 200px;
+      height: 200px;
+    }
+    .draw-tools { display: flex; justify-content: space-between; align-items: center; width: 200px; }
+    .draw-colors { display: flex; gap: 4px; flex-wrap: wrap; }
+    .draw-color {
+      width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer;
+    }
+    .draw-color.selected { border-color: white; box-shadow: 0 0 6px rgba(255,255,255,0.5); }
+    .draw-actions { display: flex; gap: 0.25rem; }
+    .btn-tool {
+      background: var(--card-bg); border: 1px solid var(--tile-border); color: #eee;
+      border-radius: 6px; padding: 0.25rem 0.5rem; font-size: 1rem; cursor: pointer;
+    }
+    .btn-tool:active { background: var(--tile-border); }
+  </style>
+</head>
+<body>
+  <div class="player-layout">
+
+    <!-- JOIN / AVATAR SCREEN -->
+    <div id="screen-join" class="screen active">
+      <div class="join-screen">
+        <h1 style="margin-bottom:1.5rem">🧩 LexiTrack</h1>
+        <input type="text" id="player-name" placeholder="Your Name" maxlength="20" autocomplete="off" />
+
+        <div class="avatar-builder card">
+          <div id="avatar-preview" class="avatar avatar-preview"></div>
+
+          <div class="section-label">Draw Your Avatar</div>
+          <div class="draw-area-wrapper">
+            <canvas id="draw-canvas" width="200" height="200"></canvas>
+            <div class="draw-tools">
+              <div class="draw-colors" id="draw-colors"></div>
+              <div class="draw-actions">
+                <button class="btn-tool" id="btn-undo">↩</button>
+                <button class="btn-tool" id="btn-clear">✕</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-label">Background Color</div>
+          <div class="avatar-options" id="color-options"></div>
+        </div>
+
+        <button class="btn btn-primary" id="btn-join" style="width:100%; margin-top:1rem">Join Game</button>
+      </div>
+    </div>
+
+    <!-- WAITING IN LOBBY -->
+    <div id="screen-lobby" class="screen">
+      <div class="waiting-msg">
+        <h2>You're in! 🎉</h2>
+        <p id="lobby-waiting-msg" style="margin-top:1rem">Waiting for the host to start the game...</p>
+        <button class="btn btn-primary" id="btn-start-game" style="display:none;width:100%;margin-top:1rem">Start Game</button>
+        <div id="lobby-player-list" style="margin-top:2rem"></div>
+      </div>
+    </div>
+
+    <!-- PLAYING -->
+    <div id="screen-playing" class="screen">
+      <div class="top-bar">
+        <span style="color:var(--text-dim);font-size:0.85rem">Round <span id="round-num">1</span>/<span id="max-rounds">5</span></span>
+        <div class="timer" id="timer">90</div>
+      </div>
+
+      <div class="current-word" id="current-word">&nbsp;</div>
+
+      <div class="board" id="board"></div>
+
+      <div class="word-count-bar" id="word-count-bar"></div>
+
+
+
+      <div class="my-words" id="my-words"></div>
+    </div>
+
+    <!-- ROUND END -->
+    <div id="screen-roundEnd" class="screen">
+      <div style="text-align:center;padding:1rem 0">
+        <h2>Round <span id="round-end-num">1</span> Complete!</h2>
+      </div>
+      <div id="round-winner-banner" style="display:none"></div>
+      <div id="round-end-words" class="card"></div>
+      <div id="round-end-scores" class="card" style="margin-top:1rem">
+        <h2 style="margin-bottom:0.5rem">Standings</h2>
+        <div id="player-standings"></div>
+      </div>
+      <div id="roundend-host-controls" style="text-align:center;margin-top:1rem;display:none">
+        <button class="btn btn-primary" id="btn-next-round" style="width:100%">Next Round →</button>
+      </div>
+      <div id="roundend-waiting-msg" class="waiting-msg">Waiting for host to start next round...</div>
+    </div>
+
+    <!-- GAME OVER -->
+    <div id="screen-gameOver" class="screen">
+      <div style="text-align:center">
+        <h1>🏆 Game Over!</h1>
+      </div>
+      <div id="final-standings" class="card" style="margin-top:1rem">
+        <h2 style="margin-bottom:0.5rem">Final Scores</h2>
+        <div id="final-player-list"></div>
+      </div>
+      <div id="gameover-host-controls" style="text-align:center;margin-top:1rem;display:none">
+        <button class="btn btn-success" id="btn-play-again" style="width:100%">Play Again</button>
+      </div>
+      <div id="gameover-waiting-msg" class="waiting-msg">Waiting for host to start new game...</div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toasts"></div>
+
+  <script src="js/trystero-peer.js"></script>
+  <script src="js/player.js"></script>
+</body>
+</html>
