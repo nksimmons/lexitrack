@@ -10,6 +10,7 @@ let avatarChoice = { drawing: null, bgColor: BG_COLORS[0] };
 let ws = null;
 let playerPeer = null;
 let sendFn = null;
+let pendingJoin = null; // queued join message if tapped before connection was ready
 
 // --- Device Identity (persistent across sessions) ---
 function getDeviceId() {
@@ -241,7 +242,12 @@ function connectWs() {
 
   ws.onopen = () => {
     sendFn = (msg) => ws.send(JSON.stringify(msg));
-    send({ type: 'reconnect', deviceId });
+    if (pendingJoin) {
+      const j = pendingJoin; pendingJoin = null;
+      sendFn(j);
+    } else {
+      send({ type: 'reconnect', deviceId });
+    }
   };
 
   ws.onmessage = (event) => {
@@ -265,7 +271,12 @@ function connectPeer(roomCode) {
 
     conn.on('open', () => {
       sendFn = (msg) => conn.send(msg);
-      send({ type: 'reconnect', deviceId });
+      if (pendingJoin) {
+        const j = pendingJoin; pendingJoin = null;
+        sendFn(j);
+      } else {
+        send({ type: 'reconnect', deviceId });
+      }
     });
 
     conn.on('data', (msg) => {
@@ -289,14 +300,17 @@ async function processServerMessage(msg) {
       playerId = msg.playerId;
       state = msg.data;
       if (msg.profile) {
-        // Save updated profile from server
         saveProfile(msg.profile.name, msg.profile.avatar);
       }
+      // Restore join button in case it was put into Connecting… state
+      { const btn = document.getElementById('btn-join');
+        btn.textContent = 'Join Game'; btn.disabled = false; }
       render();
       break;
     case 'reconnected':
       playerId = msg.playerId;
       state = msg.data;
+      pendingJoin = null; // discard any stale pending join
       render();
       break;
     case 'unknown-device':
@@ -894,7 +908,16 @@ document.getElementById('btn-join').addEventListener('click', () => {
     return;
   }
   saveProfile(name, avatarChoice);
-  send({ type: 'player-join', name, avatar: avatarChoice, deviceId });
+  const joinMsg = { type: 'player-join', name, avatar: avatarChoice, deviceId };
+  if (sendFn) {
+    sendFn(joinMsg);
+  } else {
+    // Connection still opening (common on Safari / slow networks) — queue it
+    pendingJoin = joinMsg;
+    const btn = document.getElementById('btn-join');
+    btn.textContent = 'Connecting…';
+    btn.disabled = true;
+  }
 });
 
 document.getElementById('player-name').addEventListener('keydown', (e) => {
